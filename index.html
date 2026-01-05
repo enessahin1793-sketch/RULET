@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rulet – Düz Çizgili</title>
+<title>Rulet – Doğru Eşleşme</title>
 <style>
 body{
   margin:0;
@@ -38,7 +38,7 @@ svg{
   border-radius:50%;
   background:#111;
   box-shadow:0 0 40px rgba(255,59,122,.6);
-  transition:transform 2.6s cubic-bezier(.12,.8,.12,1);
+  transition:transform 2.8s cubic-bezier(.12,.8,.12,1);
 }
 .center-btn{
   position:absolute;
@@ -56,9 +56,6 @@ svg{
   box-shadow:0 0 25px rgba(255,59,122,.8);
   z-index:6;
 }
-.center-btn:active{
-  transform:translate(-50%,-50%) scale(.95);
-}
 .result{
   margin-top:12px;
   min-height:48px;
@@ -73,13 +70,8 @@ svg{
     <div class="pointer"></div>
 
     <svg id="wheel" viewBox="0 0 400 400">
-      <!-- dış çember -->
       <circle cx="200" cy="200" r="190" stroke="#ff7aa2" stroke-width="4" fill="none"/>
-
-      <!-- çizgiler -->
       <g id="lines" stroke="#ff7aa2" stroke-width="2"></g>
-
-      <!-- yazılar -->
       <g id="labels" fill="#fff" font-size="13" text-anchor="middle"></g>
     </svg>
 
@@ -116,14 +108,15 @@ const slice = 360 / count;
 
 const lines = document.getElementById("lines");
 const labels = document.getElementById("labels");
+const wheel = document.getElementById("wheel");
 
-// ÇİZGİLER + YAZILAR
+// ÇARKI ÇİZ
 for(let i=0;i<count;i++){
-  const angle = i * slice * Math.PI / 180;
+  const a = i * slice * Math.PI / 180;
 
   // çizgi
-  const x = center + radius * Math.cos(angle);
-  const y = center + radius * Math.sin(angle);
+  const x = center + radius * Math.cos(a);
+  const y = center + radius * Math.sin(a);
   const line = document.createElementNS("http://www.w3.org/2000/svg","line");
   line.setAttribute("x1",center);
   line.setAttribute("y1",center);
@@ -131,11 +124,10 @@ for(let i=0;i<count;i++){
   line.setAttribute("y2",y);
   lines.appendChild(line);
 
-  // yazı (iki çizgi arası)
-  const mid = angle + (slice/2) * Math.PI / 180;
+  // yazı
+  const mid = a + (slice/2) * Math.PI / 180;
   const tx = center + radius*0.65 * Math.cos(mid);
   const ty = center + radius*0.65 * Math.sin(mid);
-
   const text = document.createElementNS("http://www.w3.org/2000/svg","text");
   text.setAttribute("x",tx);
   text.setAttribute("y",ty);
@@ -144,7 +136,7 @@ for(let i=0;i<count;i++){
   labels.appendChild(text);
 }
 
-// SES
+// ===== SES =====
 let audioCtx, timer;
 function tick(){
   const o=audioCtx.createOscillator(), g=audioCtx.createGain();
@@ -173,25 +165,30 @@ function stopSound(){
   setTimeout(()=>audioCtx.close(),120);
 }
 
-// DÖN
-let angle=0, spinning=false;
-const wheel=document.getElementById("wheel");
+// ===== DÖNME + DOĞRU HESAP =====
+let angle = 0;
+let spinning = false;
 
-document.getElementById("spinBtn").onclick=()=>{
+document.getElementById("spinBtn").onclick = ()=>{
   if(spinning) return;
-  spinning=true;
+  spinning = true;
   startSound();
 
-  const idx=Math.floor(Math.random()*count);
-  const stop=360*3 + idx*slice + slice/2;
-  angle+=stop;
-  wheel.style.transform=`rotate(${angle}deg)`;
+  // SADECE AÇI ÜRET
+  const extra = Math.random() * 360;
+  const spin = 360*4 + extra;
+  angle += spin;
+  wheel.style.transform = `rotate(${angle}deg)`;
 
   setTimeout(()=>{
-    document.getElementById("result").innerText=options[idx];
+    // OK HER ZAMAN 270 DERECEYİ GÖSTERİR (SVG'de yukarı)
+    const normalized = (360 - (angle % 360) + 270) % 360;
+    const index = Math.floor(normalized / slice) % count;
+
+    document.getElementById("result").innerText = options[index];
     stopSound();
-    spinning=false;
-  },2600);
+    spinning = false;
+  },2800);
 };
 </script>
 
