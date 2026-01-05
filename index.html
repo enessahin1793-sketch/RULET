@@ -1,195 +1,209 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ateşli Rulet – 16 Net Dilim</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ateşli Rulet – Düz Bölmeli</title>
 <style>
 :root{
   --bg1:#050008; --bg2:#000;
   --n1:#ff3b7a; --n2:#ff7aa2;
 }
-*{box-sizing:border-box}
 body{
   margin:0; min-height:100vh;
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at top, var(--bg1), var(--bg2));
-  font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family:system-ui, Arial, sans-serif;
   color:#fff;
 }
-.wrap{width:100%; max-width:480px; text-align:center; padding:12px}
-.wheel-wrap{position:relative; width:360px; height:360px; margin:8px auto 14px}
+.wrap{text-align:center}
+.wheel-wrap{
+  position:relative;
+  width:360px; height:360px;
+  margin:auto;
+}
 .pointer{
-  position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+  position:absolute;
+  top:-16px; left:50%;
+  transform:translateX(-50%);
   width:0;height:0;
   border-left:14px solid transparent;
   border-right:14px solid transparent;
   border-bottom:24px solid var(--n1);
+  z-index:5;
   filter:drop-shadow(0 0 10px rgba(255,59,122,.9));
+}
+svg{
+  width:100%; height:100%;
+  border-radius:50%;
+  box-shadow:0 0 55px rgba(255,59,122,.55);
+  transition:transform 2.6s cubic-bezier(.12,.8,.12,1);
+}
+.center-btn{
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:100px; height:100px;
+  border-radius:50%;
+  border:none;
+  background:#070007;
+  color:var(--n2);
+  font-size:18px;
+  font-weight:900;
+  box-shadow:0 0 30px rgba(255,59,122,.9);
   z-index:6;
 }
-.wheel{
-  width:100%; height:100%; border-radius:50%;
-  position:relative; overflow:hidden;
-  box-shadow:0 0 55px rgba(255,59,122,.55), inset 0 0 18px rgba(0,0,0,.6);
-  transition:transform 2.4s cubic-bezier(.12,.8,.12,1);
-}
-
-/* 16 eşit dilim */
-.slice{
-  position:absolute;
-  width:50%; height:50%;
-  left:50%; top:50%;
-  transform-origin:0% 0%;
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-}
-.slice.even{background:var(--n1)}
-.slice.odd{background:var(--n2)}
-
-/* Yazılar net ve merkezde */
-.label{
-  position:absolute;
-  left:55%;
-  top:55%;
-  width:120px;
-  transform-origin:0 0;
-  transform: rotate(90deg) translate(-50%,-50%);
-  text-align:center;
-  font-size:12px;
-  line-height:1.15;
-  padding:2px 4px;
-  color:#fff;
-  text-shadow:0 1px 2px rgba(0,0,0,.6);
-}
-
-.center-btn{
-  position:absolute; inset:0; margin:auto;
-  width:104px; height:104px; border-radius:50%;
-  border:none; cursor:pointer;
-  background:#070007; color:var(--n2);
-  font-weight:900; font-size:18px; letter-spacing:.6px;
-  box-shadow:0 0 30px rgba(255,59,122,.95), inset 0 0 10px rgba(255,255,255,.06);
-  z-index:7;
-}
-.center-btn:active{transform:scale(.96)}
+.center-btn:active{transform:translate(-50%,-50%) scale(.95)}
 .result{
-  min-height:56px; margin-top:6px; padding:10px 12px;
-  border-radius:12px; background:rgba(255,255,255,.04);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  margin-top:10px;
   font-size:18px;
+  min-height:48px;
 }
-.note{opacity:.65; font-size:13px; margin-top:6px}
 </style>
 </head>
 <body>
+
 <div class="wrap">
   <div class="wheel-wrap">
     <div class="pointer"></div>
-    <div id="wheel" class="wheel"></div>
+
+    <!-- SVG RULET -->
+    <svg id="wheel" viewBox="0 0 400 400">
+      <!-- dış daire -->
+      <circle cx="200" cy="200" r="195" fill="#111"/>
+      <!-- arka renkler -->
+      <g id="slices"></g>
+      <!-- çizgiler -->
+      <g id="lines" stroke="#ff7aa2" stroke-width="2"></g>
+      <!-- yazılar -->
+      <g id="labels" fill="#fff" font-size="12" text-anchor="middle"></g>
+    </svg>
+
     <button class="center-btn" id="spinBtn">ÇEVİR</button>
   </div>
-  <div id="result" class="result">Çevir ve bakalım nerede duracak…</div>
-  <div class="note">Tamamen rastgele. Ok neredeyse orası.</div>
+
+  <div id="result" class="result">Çevir bakalım…</div>
 </div>
 
 <script>
-// 16 NET ŞIK
 const options = [
-  "Göz temasını bozma (20 sn)",
-  "Yaklaş ama dokunma (15 sn)",
-  "Elini beline koy (15 sn)",
-  "Kulağına tek kelime fısılda",
-  "Omzuna hafif temas (10 sn)",
+  "Göz temasını bozma",
+  "Yaklaş ama dokunma",
+  "Elini beline koy",
+  "Kulağına fısılda",
+  "Omzuna temas",
   "Yaklaş–geri çekil",
-  "Nefesini yakından hissettir",
-  "Yavaş sarıl (20 sn)",
-  "Boynuna çok hafif temas",
-  "Eller belde, bakışı koru",
-  "Yakın dur, kısa cümle fısılda",
-  "Teması yavaşlat (20 sn)",
-  "Yakınlığı artır (25 sn)",
-  "Bakış + temas uyumu (30 sn)",
-  "Yaklaşıp geri çekil (30 sn)",
-  "Sessiz kal, temas konuşsun"
+  "Nefesini hissettir",
+  "Yavaş sarıl",
+  "Boynuna hafif temas",
+  "Bakışı koru",
+  "Kısa cümle fısılda",
+  "Teması yavaşlat",
+  "Yakınlığı artır",
+  "Uyumu koru",
+  "Ritmi sen belirle",
+  "Sessiz kal"
 ];
 
-// ÇARKI ÇİZ – 16 EŞİT PARÇA
-const wheel = document.getElementById("wheel");
-const sliceDeg = 360 / options.length;
+const sliceCount = options.length;
+const center = 200;
+const radius = 195;
+const sliceAngle = 360 / sliceCount;
 
-options.forEach((txt, i)=>{
-  const s = document.createElement("div");
-  s.className = "slice " + (i%2 ? "odd":"even");
-  const rot = i * sliceDeg;
-  s.style.transform = `rotate(${rot}deg)`;
+const slicesG = document.getElementById("slices");
+const linesG  = document.getElementById("lines");
+const labelsG = document.getElementById("labels");
 
-  const label = document.createElement("div");
-  label.className = "label";
-  label.textContent = txt;
+// RENKLİ DİLİMLER
+for(let i=0;i<sliceCount;i++){
+  const start = i * sliceAngle;
+  const end = start + sliceAngle;
 
-  s.appendChild(label);
-  wheel.appendChild(s);
-});
+  const largeArc = sliceAngle > 180 ? 1 : 0;
 
-// ====== SES (CASINO RULETİ) ======
+  const x1 = center + radius * Math.cos(Math.PI * start / 180);
+  const y1 = center + radius * Math.sin(Math.PI * start / 180);
+  const x2 = center + radius * Math.cos(Math.PI * end / 180);
+  const y2 = center + radius * Math.sin(Math.PI * end / 180);
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+  path.setAttribute("d",
+    `M ${center} ${center}
+     L ${x1} ${y1}
+     A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}
+     Z`);
+  path.setAttribute("fill", i%2 ? "#ff3b7a" : "#ff7aa2");
+  slicesG.appendChild(path);
+
+  // DÜMDÜZ RADYAL ÇİZGİ
+  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1", center);
+  line.setAttribute("y1", center);
+  line.setAttribute("x2", x1);
+  line.setAttribute("y2", y1);
+  linesG.appendChild(line);
+
+  // YAZI
+  const mid = start + sliceAngle/2;
+  const tx = center + (radius*0.65) * Math.cos(Math.PI * mid / 180);
+  const ty = center + (radius*0.65) * Math.sin(Math.PI * mid / 180);
+
+  const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+  text.setAttribute("x", tx);
+  text.setAttribute("y", ty);
+  text.setAttribute("transform", `rotate(${mid}, ${tx}, ${ty})`);
+  text.textContent = options[i];
+  labelsG.appendChild(text);
+}
+
+// ===== SES =====
 let audioCtx, tickTimer;
-
-function playTick(){
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = "square";
-  osc.frequency.value = 1100;
-  gain.gain.value = 0.06;
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.02);
+function tick(){
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type="square"; o.frequency.value=1000; g.gain.value=0.05;
+  o.connect(g).connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime+0.02);
 }
-function playClack(){ // sonda TAK
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = "square";
-  osc.frequency.value = 260;
-  gain.gain.value = 0.12;
-  osc.connect(gain).connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.06);
+function clack(){
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.frequency.value=220; g.gain.value=0.12;
+  o.connect(g).connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime+0.06);
 }
-function startRouletteSound(){
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let interval = 70;
-  tickTimer = setInterval(function tick(){
-    playTick();
-    interval += 14;
+function startSound(){
+  audioCtx=new (window.AudioContext||webkitAudioContext)();
+  let t=70;
+  tickTimer=setInterval(function run(){
+    tick(); t+=14;
     clearInterval(tickTimer);
-    tickTimer = setInterval(tick, interval);
-  }, interval);
+    tickTimer=setInterval(run,t);
+  },t);
 }
-function stopRouletteSound(){
+function stopSound(){
   clearInterval(tickTimer);
-  playClack();
-  setTimeout(()=>{ audioCtx && audioCtx.close(); }, 120);
+  clack();
+  setTimeout(()=>audioCtx.close(),150);
 }
 
-// ====== DÖNDÜR ======
-let angle = 0;
-let spinning = false;
+// ===== DÖNÜŞ =====
+let angle=0, spinning=false;
+const wheel=document.getElementById("wheel");
 
-document.getElementById("spinBtn").onclick = ()=>{
+document.getElementById("spinBtn").onclick=()=>{
   if(spinning) return;
-  spinning = true;
+  spinning=true;
+  startSound();
 
-  startRouletteSound();
-
-  const idx = Math.floor(Math.random() * options.length);
-  const stopAt = 360*3 + (idx * sliceDeg) + sliceDeg/2;
-  angle += stopAt;
-  wheel.style.transform = `rotate(${angle}deg)`;
+  const idx=Math.floor(Math.random()*sliceCount);
+  const stop=360*3 + idx*sliceAngle + sliceAngle/2;
+  angle+=stop;
+  wheel.style.transform=`rotate(${angle}deg)`;
 
   setTimeout(()=>{
-    document.getElementById("result").innerText = options[idx];
-    stopRouletteSound();
-    spinning = false;
-  }, 2400);
+    document.getElementById("result").innerText=options[idx];
+    stopSound();
+    spinning=false;
+  },2600);
 };
 </script>
 </body>
