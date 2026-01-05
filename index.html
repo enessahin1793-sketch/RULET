@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ateşli Rulet – Gece Modu 2</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ateşli Rulet – 16 Dilim (Sesli)</title>
 <style>
 :root{
   --bg1:#050008; --bg2:#000;
-  --neon:#ff3b7a; --neon2:#ff7aa2;
+  --n1:#ff3b7a; --n2:#ff7aa2;
 }
 *{box-sizing:border-box}
 body{
@@ -15,144 +15,172 @@ body{
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at top, var(--bg1), var(--bg2));
   font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color:#fff; text-align:center;
+  color:#fff;
 }
-.container{width:100%; max-width:440px; padding:12px}
-.title{letter-spacing:.4px; opacity:.9; margin-bottom:6px}
-.wheel-wrap{position:relative; width:320px; height:320px; margin:10px auto 14px}
+.wrap{width:100%; max-width:460px; text-align:center; padding:12px}
+.wheel-wrap{position:relative; width:340px; height:340px; margin:8px auto 14px}
 .pointer{
-  position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+  position:absolute; top:-18px; left:50%; transform:translateX(-50%);
   width:0;height:0;
   border-left:14px solid transparent;
   border-right:14px solid transparent;
-  border-bottom:22px solid var(--neon);
-  filter:drop-shadow(0 0 10px rgba(255,59,122,.8));
-  z-index:5;
+  border-bottom:24px solid var(--n1);
+  filter:drop-shadow(0 0 10px rgba(255,59,122,.9));
+  z-index:6;
 }
 .wheel{
   width:100%; height:100%; border-radius:50%;
-  background:conic-gradient(
-    #ff3b7a 0 22.5deg, #ff7aa2 22.5 45deg,
-    #ff3b7a 45 67.5deg, #ff7aa2 67.5 90deg,
-    #ff3b7a 90 112.5deg, #ff7aa2 112.5 135deg,
-    #ff3b7a 135 157.5deg, #ff7aa2 157.5 180deg,
-    #ff3b7a 180 202.5deg, #ff7aa2 202.5 225deg,
-    #ff3b7a 225 247.5deg, #ff7aa2 247.5 270deg,
-    #ff3b7a 270 292.5deg, #ff7aa2 292.5 315deg,
-    #ff3b7a 315 337.5deg, #ff7aa2 337.5 360deg
-  );
   box-shadow:0 0 55px rgba(255,59,122,.55), inset 0 0 18px rgba(0,0,0,.6);
-  transition:transform 1.6s cubic-bezier(.18,.8,.18,1);
+  transition:transform 2.4s cubic-bezier(.12,.8,.12,1);
+  position:relative;
+  overflow:hidden;
+}
+.slice{
+  position:absolute; width:50%; height:50%;
+  left:50%; top:50%;
+  transform-origin:0% 0%;
+}
+.slice .label{
+  position:absolute; left:6px; top:50%;
+  transform:translateY(-50%) rotate(90deg);
+  width:150px;
+  font-size:12px; line-height:1.1; text-align:left;
+  color:#fff; opacity:.95;
 }
 .center-btn{
   position:absolute; inset:0; margin:auto;
-  width:96px; height:96px; border-radius:50%;
+  width:100px; height:100px; border-radius:50%;
   border:none; cursor:pointer;
-  background:#070007; color:var(--neon2);
-  font-weight:800; font-size:18px; letter-spacing:.5px;
-  box-shadow:0 0 28px rgba(255,59,122,.9), inset 0 0 10px rgba(255,255,255,.05);
-  z-index:4;
+  background:#070007; color:var(--n2);
+  font-weight:900; font-size:18px; letter-spacing:.6px;
+  box-shadow:0 0 30px rgba(255,59,122,.95), inset 0 0 10px rgba(255,255,255,.06);
+  z-index:7;
 }
 .center-btn:active{transform:scale(.96)}
-.readout{
-  min-height:72px; padding:10px 12px; margin-top:6px;
+.result{
+  min-height:56px; margin-top:6px; padding:10px 12px;
   border-radius:12px; background:rgba(255,255,255,.04);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
-  font-size:18px; line-height:1.3;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+  font-size:18px;
 }
-.meta{display:flex; justify-content:space-between; opacity:.7; font-size:13px; margin-top:6px}
-.hard{color:var(--neon2)}
-.lock{opacity:.45}
+.note{opacity:.65; font-size:13px; margin-top:6px}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="title">🌑 Ateşli Rulet — Gece Modu 2</div>
-
+<div class="wrap">
   <div class="wheel-wrap">
     <div class="pointer"></div>
     <div id="wheel" class="wheel"></div>
-    <button id="spinBtn" class="center-btn" onclick="spin()">ÇEVİR</button>
+    <button class="center-btn" id="spinBtn">ÇEVİR</button>
   </div>
-
-  <div id="task" class="readout">Hazırsan çevir…</div>
-  <div class="meta">
-    <div>Tur: <b id="round">0</b></div>
-    <div>Zorluk: <b class="hard" id="level">Başlangıç</b></div>
-  </div>
+  <div id="result" class="result">Çevir ve bakalım nerede duracak…</div>
+  <div class="note">Tamamen rastgele. Ok neredeyse orası.</div>
 </div>
 
 <script>
-// 16 DİLİM — grafik/explicit olmayan, tensel & ateşli
-const tasks = [
-  // 1–4 (Başlangıç)
+// ====== DİLİMLER (16) ======
+const options = [
   "Göz temasını bozma (20 sn)",
-  "Yavaşça yaklaş, aradaki mesafeyi koru (15 sn)",
-  "Elini beline koy ve sabit dur (15 sn)",
+  "Yaklaş ama dokunma (15 sn)",
+  "Elini beline koy (15 sn)",
   "Kulağına tek kelime fısılda",
-
-  // 5–8 (Isınma)
-  "Omzuna hafif bir dokunuş yap (10 sn)",
-  "Yaklaşıp geri çekil, ritmi sen belirle",
-  "Nefesini yakından hissettir (10 sn)",
-  "Yavaş bir sarılma ver (20 sn)",
-
-  // 9–12 (Ateşli)
-  "Boynuna çok hafif bir temas yap (10 sn)",
-  "Ellerin belinde kalsın, bakışını koru (20 sn)",
-  "Yakın dur, fısıltıyla kısa bir cümle söyle",
-  "Teması yavaşlat, sabrı test et (20 sn)",
-
-  // 13–16 (Yoğun)
-  "Yakınlığı artır, teması sabit tut (25 sn)",
-  "Bakış + temas uyumunu bozma (30 sn)",
-  "Yaklaşıp geri çekil, kontrol sende (30 sn)",
-  "Sessiz kal, teması konuşsun (30 sn)"
+  "Omzuna hafif temas (10 sn)",
+  "Yaklaş–geri çekil ritmi",
+  "Nefesini yakından hissettir",
+  "Yavaş sarıl (20 sn)",
+  "Boynuna çok hafif temas",
+  "Eller belde, bakışı koru",
+  "Yakın dur, kısa cümle fısılda",
+  "Teması yavaşlat (20 sn)",
+  "Yakınlığı artır (25 sn)",
+  "Bakış + temas uyumu (30 sn)",
+  "Yaklaşıp geri çekil (30 sn)",
+  "Sessiz kal, temas konuşsun"
 ];
 
-let angle = 0;
-let round = 0;
-let locked = false;
+// ====== ÇARKI ÇİZ ======
+const wheel = document.getElementById("wheel");
+const sliceDeg = 360 / options.length;
 
-function difficultyLabel(r){
-  if(r<=3) return "Başlangıç";
-  if(r<=6) return "Isınma";
-  if(r<=10) return "Ateşli";
-  return "Yoğun";
+options.forEach((txt, i)=>{
+  const s = document.createElement("div");
+  s.className = "slice";
+  const rot = i * sliceDeg;
+  s.style.transform = `rotate(${rot}deg)`;
+  s.style.background = i % 2 ? "var(--n2)" : "var(--n1)";
+  s.style.clipPath = "polygon(0 0, 100% 0, 0 100%)";
+
+  const label = document.createElement("div");
+  label.className = "label";
+  label.textContent = txt;
+
+  s.appendChild(label);
+  wheel.appendChild(s);
+});
+
+// ====== SES (CASINO RULETİ) ======
+let audioCtx, tickTimer;
+
+function playTick(){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.value = 1100;
+  gain.gain.value = 0.06;
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.02);
 }
 
-function spin(){
-  if(locked) return;
-  locked = true;
+function playClack(){ // sonda TAK
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.value = 260;
+  gain.gain.value = 0.12;
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.06);
+}
 
-  const wheel = document.getElementById("wheel");
-  const btn = document.getElementById("spinBtn");
-  const taskBox = document.getElementById("task");
+function startRouletteSound(){
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let interval = 70; // başta hızlı
+  tickTimer = setInterval(function tick(){
+    playTick();
+    interval += 14; // yavaşlasın
+    clearInterval(tickTimer);
+    tickTimer = setInterval(tick, interval);
+  }, interval);
+}
 
-  round++;
-  document.getElementById("round").innerText = round;
-  document.getElementById("level").innerText = difficultyLabel(round);
+function stopRouletteSound(){
+  clearInterval(tickTimer);
+  playClack(); // 🛑 TAK
+  setTimeout(()=>{ audioCtx && audioCtx.close(); }, 120);
+}
 
-  // ilerledikçe üst dilimlere kayma (zorlaşma)
-  const biasStart = Math.min(Math.floor(round/2), 12); // 0→12
-  const idx = Math.floor(Math.random() * (tasks.length - biasStart)) + biasStart;
+// ====== DÖNDÜRME ======
+let angle = 0;
+let spinning = false;
 
-  const slice = 360 / tasks.length;
-  const spinAngle = 900 + (idx * slice) + slice/2;
-  angle += spinAngle;
+document.getElementById("spinBtn").onclick = ()=>{
+  if(spinning) return;
+  spinning = true;
+
+  startRouletteSound(); // 🔊 SES BAŞLA
+
+  const idx = Math.floor(Math.random() * options.length); // tamamen rastgele
+  const stopAt = 360*3 + (idx * sliceDeg) + sliceDeg/2;
+  angle += stopAt;
   wheel.style.transform = `rotate(${angle}deg)`;
 
-  btn.classList.add("lock");
   setTimeout(()=>{
-    taskBox.innerText = tasks[idx];
-  }, 1200);
-
-  // kısa kilit (spam olmasın)
-  setTimeout(()=>{
-    locked = false;
-    btn.classList.remove("lock");
-  }, 1700);
-}
+    document.getElementById("result").innerText = options[idx];
+    stopRouletteSound(); // 🔇 Sonda TAK
+    spinning = false;
+  }, 2400);
+};
 </script>
 </body>
 </html>
