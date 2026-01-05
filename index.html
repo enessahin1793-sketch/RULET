@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Ateşli Rulet – 16 Dilim (Sesli)</title>
+<title>Ateşli Rulet – 16 Net Dilim</title>
 <style>
 :root{
   --bg1:#050008; --bg2:#000;
@@ -17,8 +17,8 @@ body{
   font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color:#fff;
 }
-.wrap{width:100%; max-width:460px; text-align:center; padding:12px}
-.wheel-wrap{position:relative; width:340px; height:340px; margin:8px auto 14px}
+.wrap{width:100%; max-width:480px; text-align:center; padding:12px}
+.wheel-wrap{position:relative; width:360px; height:360px; margin:8px auto 14px}
 .pointer{
   position:absolute; top:-18px; left:50%; transform:translateX(-50%);
   width:0;height:0;
@@ -30,26 +30,41 @@ body{
 }
 .wheel{
   width:100%; height:100%; border-radius:50%;
+  position:relative; overflow:hidden;
   box-shadow:0 0 55px rgba(255,59,122,.55), inset 0 0 18px rgba(0,0,0,.6);
   transition:transform 2.4s cubic-bezier(.12,.8,.12,1);
-  position:relative;
-  overflow:hidden;
 }
+
+/* 16 eşit dilim */
 .slice{
-  position:absolute; width:50%; height:50%;
+  position:absolute;
+  width:50%; height:50%;
   left:50%; top:50%;
   transform-origin:0% 0%;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
 }
-.slice .label{
-  position:absolute; left:6px; top:50%;
-  transform:translateY(-50%) rotate(90deg);
-  width:150px;
-  font-size:12px; line-height:1.1; text-align:left;
-  color:#fff; opacity:.95;
+.slice.even{background:var(--n1)}
+.slice.odd{background:var(--n2)}
+
+/* Yazılar net ve merkezde */
+.label{
+  position:absolute;
+  left:55%;
+  top:55%;
+  width:120px;
+  transform-origin:0 0;
+  transform: rotate(90deg) translate(-50%,-50%);
+  text-align:center;
+  font-size:12px;
+  line-height:1.15;
+  padding:2px 4px;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.6);
 }
+
 .center-btn{
   position:absolute; inset:0; margin:auto;
-  width:100px; height:100px; border-radius:50%;
+  width:104px; height:104px; border-radius:50%;
   border:none; cursor:pointer;
   background:#070007; color:var(--n2);
   font-weight:900; font-size:18px; letter-spacing:.6px;
@@ -78,14 +93,14 @@ body{
 </div>
 
 <script>
-// ====== DİLİMLER (16) ======
+// 16 NET ŞIK
 const options = [
   "Göz temasını bozma (20 sn)",
   "Yaklaş ama dokunma (15 sn)",
   "Elini beline koy (15 sn)",
   "Kulağına tek kelime fısılda",
   "Omzuna hafif temas (10 sn)",
-  "Yaklaş–geri çekil ritmi",
+  "Yaklaş–geri çekil",
   "Nefesini yakından hissettir",
   "Yavaş sarıl (20 sn)",
   "Boynuna çok hafif temas",
@@ -98,17 +113,15 @@ const options = [
   "Sessiz kal, temas konuşsun"
 ];
 
-// ====== ÇARKI ÇİZ ======
+// ÇARKI ÇİZ – 16 EŞİT PARÇA
 const wheel = document.getElementById("wheel");
 const sliceDeg = 360 / options.length;
 
 options.forEach((txt, i)=>{
   const s = document.createElement("div");
-  s.className = "slice";
+  s.className = "slice " + (i%2 ? "odd":"even");
   const rot = i * sliceDeg;
   s.style.transform = `rotate(${rot}deg)`;
-  s.style.background = i % 2 ? "var(--n2)" : "var(--n1)";
-  s.style.clipPath = "polygon(0 0, 100% 0, 0 100%)";
 
   const label = document.createElement("div");
   label.className = "label";
@@ -131,7 +144,6 @@ function playTick(){
   osc.start();
   osc.stop(audioCtx.currentTime + 0.02);
 }
-
 function playClack(){ // sonda TAK
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -142,25 +154,23 @@ function playClack(){ // sonda TAK
   osc.start();
   osc.stop(audioCtx.currentTime + 0.06);
 }
-
 function startRouletteSound(){
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let interval = 70; // başta hızlı
+  let interval = 70;
   tickTimer = setInterval(function tick(){
     playTick();
-    interval += 14; // yavaşlasın
+    interval += 14;
     clearInterval(tickTimer);
     tickTimer = setInterval(tick, interval);
   }, interval);
 }
-
 function stopRouletteSound(){
   clearInterval(tickTimer);
-  playClack(); // 🛑 TAK
+  playClack();
   setTimeout(()=>{ audioCtx && audioCtx.close(); }, 120);
 }
 
-// ====== DÖNDÜRME ======
+// ====== DÖNDÜR ======
 let angle = 0;
 let spinning = false;
 
@@ -168,16 +178,16 @@ document.getElementById("spinBtn").onclick = ()=>{
   if(spinning) return;
   spinning = true;
 
-  startRouletteSound(); // 🔊 SES BAŞLA
+  startRouletteSound();
 
-  const idx = Math.floor(Math.random() * options.length); // tamamen rastgele
+  const idx = Math.floor(Math.random() * options.length);
   const stopAt = 360*3 + (idx * sliceDeg) + sliceDeg/2;
   angle += stopAt;
   wheel.style.transform = `rotate(${angle}deg)`;
 
   setTimeout(()=>{
     document.getElementById("result").innerText = options[idx];
-    stopRouletteSound(); // 🔇 Sonda TAK
+    stopRouletteSound();
     spinning = false;
   }, 2400);
 };
