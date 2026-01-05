@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rulet – Doğru Eşleşme</title>
+<title>Rulet</title>
 <style>
 body{
   margin:0;
@@ -57,9 +57,17 @@ svg{
   z-index:6;
 }
 .result{
-  margin-top:12px;
-  min-height:48px;
-  font-size:18px;
+  margin-top:14px;
+  font-size:20px;
+  opacity:.9;
+}
+.slice{
+  fill:#111;
+  transition:.3s;
+}
+.slice.active{
+  fill:#ff3b7a;
+  filter:drop-shadow(0 0 10px #ff3b7a);
 }
 </style>
 </head>
@@ -70,35 +78,25 @@ svg{
     <div class="pointer"></div>
 
     <svg id="wheel" viewBox="0 0 400 400">
-      <circle cx="200" cy="200" r="190" stroke="#ff7aa2" stroke-width="4" fill="none"/>
+      <g id="slices"></g>
       <g id="lines" stroke="#ff7aa2" stroke-width="2"></g>
       <g id="labels" fill="#fff" font-size="13" text-anchor="middle"></g>
+      <circle cx="200" cy="200" r="190" stroke="#ff7aa2" stroke-width="4" fill="none"/>
     </svg>
 
     <button class="center-btn" id="spinBtn">ÇEVİR</button>
   </div>
 
-  <div id="result" class="result">Çevir bakalım…</div>
+  <!-- SABİT YAZI -->
+  <div class="result">Yap bakalım 😏</div>
 </div>
 
 <script>
 const options = [
-  "Göz teması",
-  "Yaklaş",
-  "Dokunma",
-  "Fısılda",
-  "Omza temas",
-  "Geri çekil",
-  "Nefesi hisset",
-  "Sarıl",
-  "Boyun",
-  "Bakışı koru",
-  "Yakın dur",
-  "Yavaşlat",
-  "Yakınlık",
-  "Uyum",
-  "Ritim",
-  "Sessizlik"
+  "Göz teması","Yaklaş","Dokunma","Fısılda",
+  "Omza temas","Geri çekil","Nefesi hisset","Sarıl",
+  "Boyun","Bakışı koru","Yakın dur","Yavaşlat",
+  "Yakınlık","Uyum","Ritim","Sessizlik"
 ];
 
 const count = options.length;
@@ -106,55 +104,69 @@ const center = 200;
 const radius = 190;
 const slice = 360 / count;
 
+const slicesG = document.getElementById("slices");
 const lines = document.getElementById("lines");
 const labels = document.getElementById("labels");
 const wheel = document.getElementById("wheel");
+let sliceEls = [];
+
+function arcPath(start,end){
+  const r=radius;
+  const sx=center+r*Math.cos(start), sy=center+r*Math.sin(start);
+  const ex=center+r*Math.cos(end), ey=center+r*Math.sin(end);
+  return `M ${center} ${center} L ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey} Z`;
+}
 
 // ÇARKI ÇİZ
 for(let i=0;i<count;i++){
-  const a = i * slice * Math.PI / 180;
+  const a1=i*slice*Math.PI/180;
+  const a2=(i+1)*slice*Math.PI/180;
 
-  // çizgi
-  const x = center + radius * Math.cos(a);
-  const y = center + radius * Math.sin(a);
-  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+  path.setAttribute("d",arcPath(a1,a2));
+  path.setAttribute("class","slice");
+  slicesG.appendChild(path);
+  sliceEls.push(path);
+
+  const lx=center+radius*Math.cos(a1);
+  const ly=center+radius*Math.sin(a1);
+  const line=document.createElementNS("http://www.w3.org/2000/svg","line");
   line.setAttribute("x1",center);
   line.setAttribute("y1",center);
-  line.setAttribute("x2",x);
-  line.setAttribute("y2",y);
+  line.setAttribute("x2",lx);
+  line.setAttribute("y2",ly);
   lines.appendChild(line);
 
-  // yazı
-  const mid = a + (slice/2) * Math.PI / 180;
-  const tx = center + radius*0.65 * Math.cos(mid);
-  const ty = center + radius*0.65 * Math.sin(mid);
-  const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+  const mid=a1+(slice/2)*Math.PI/180;
+  const tx=center+radius*0.65*Math.cos(mid);
+  const ty=center+radius*0.65*Math.sin(mid);
+  const text=document.createElementNS("http://www.w3.org/2000/svg","text");
   text.setAttribute("x",tx);
   text.setAttribute("y",ty);
   text.setAttribute("transform",`rotate(${mid*180/Math.PI},${tx},${ty})`);
-  text.textContent = options[i];
+  text.textContent=options[i];
   labels.appendChild(text);
 }
 
-// ===== SES =====
-let audioCtx, timer;
+// SES
+let audioCtx,timer;
 function tick(){
-  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-  o.frequency.value=900; g.gain.value=0.05;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.frequency.value=900;g.gain.value=.05;
   o.connect(g).connect(audioCtx.destination);
-  o.start(); o.stop(audioCtx.currentTime+0.02);
+  o.start();o.stop(audioCtx.currentTime+.02);
 }
 function clack(){
-  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-  o.frequency.value=200; g.gain.value=0.12;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.frequency.value=180;g.gain.value=.15;
   o.connect(g).connect(audioCtx.destination);
-  o.start(); o.stop(audioCtx.currentTime+0.06);
+  o.start();o.stop(audioCtx.currentTime+.06);
 }
 function startSound(){
   audioCtx=new (window.AudioContext||webkitAudioContext)();
   let t=70;
   timer=setInterval(function run(){
-    tick(); t+=14;
+    tick(); t+=15;
     clearInterval(timer);
     timer=setInterval(run,t);
   },t);
@@ -165,29 +177,26 @@ function stopSound(){
   setTimeout(()=>audioCtx.close(),120);
 }
 
-// ===== DÖNME + DOĞRU HESAP =====
-let angle = 0;
-let spinning = false;
-
-document.getElementById("spinBtn").onclick = ()=>{
+// DÖNME
+let angle=0, spinning=false;
+document.getElementById("spinBtn").onclick=()=>{
   if(spinning) return;
-  spinning = true;
+  spinning=true;
+
+  sliceEls.forEach(s=>s.classList.remove("active"));
   startSound();
 
-  // SADECE AÇI ÜRET
-  const extra = Math.random() * 360;
-  const spin = 360*4 + extra;
-  angle += spin;
-  wheel.style.transform = `rotate(${angle}deg)`;
+  const spin=360*4+Math.random()*360;
+  angle+=spin;
+  wheel.style.transform=`rotate(${angle}deg)`;
 
   setTimeout(()=>{
-    // OK HER ZAMAN 270 DERECEYİ GÖSTERİR (SVG'de yukarı)
-    const normalized = (360 - (angle % 360) + 270) % 360;
-    const index = Math.floor(normalized / slice) % count;
+    const normalized=(360-(angle%360)+270)%360;
+    const index=Math.floor(normalized/slice)%count;
+    sliceEls[index].classList.add("active");
 
-    document.getElementById("result").innerText = options[index];
     stopSound();
-    spinning = false;
+    spinning=false;
   },2800);
 };
 </script>
