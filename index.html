@@ -3,61 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ateşli Rulet – Düz Bölmeli</title>
+<title>Rulet – Düz Çizgili</title>
 <style>
-:root{
-  --bg1:#050008; --bg2:#000;
-  --n1:#ff3b7a; --n2:#ff7aa2;
-}
 body{
-  margin:0; min-height:100vh;
-  display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(circle at top, var(--bg1), var(--bg2));
-  font-family:system-ui, Arial, sans-serif;
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#050008;
+  font-family:Arial,sans-serif;
   color:#fff;
 }
 .wrap{text-align:center}
 .wheel-wrap{
   position:relative;
-  width:360px; height:360px;
-  margin:auto;
+  width:360px;
+  height:360px;
 }
 .pointer{
   position:absolute;
-  top:-16px; left:50%;
+  top:-18px;
+  left:50%;
   transform:translateX(-50%);
   width:0;height:0;
   border-left:14px solid transparent;
   border-right:14px solid transparent;
-  border-bottom:24px solid var(--n1);
+  border-bottom:24px solid #ff3b7a;
   z-index:5;
-  filter:drop-shadow(0 0 10px rgba(255,59,122,.9));
 }
 svg{
-  width:100%; height:100%;
+  width:100%;
+  height:100%;
   border-radius:50%;
-  box-shadow:0 0 55px rgba(255,59,122,.55);
+  background:#111;
+  box-shadow:0 0 40px rgba(255,59,122,.6);
   transition:transform 2.6s cubic-bezier(.12,.8,.12,1);
 }
 .center-btn{
   position:absolute;
-  top:50%; left:50%;
+  top:50%;
+  left:50%;
   transform:translate(-50%,-50%);
-  width:100px; height:100px;
+  width:96px;
+  height:96px;
   border-radius:50%;
   border:none;
-  background:#070007;
-  color:var(--n2);
+  background:#000;
+  color:#ff7aa2;
   font-size:18px;
-  font-weight:900;
-  box-shadow:0 0 30px rgba(255,59,122,.9);
+  font-weight:bold;
+  box-shadow:0 0 25px rgba(255,59,122,.8);
   z-index:6;
 }
-.center-btn:active{transform:translate(-50%,-50%) scale(.95)}
+.center-btn:active{
+  transform:translate(-50%,-50%) scale(.95);
+}
 .result{
-  margin-top:10px;
-  font-size:18px;
+  margin-top:12px;
   min-height:48px;
+  font-size:18px;
 }
 </style>
 </head>
@@ -67,16 +72,15 @@ svg{
   <div class="wheel-wrap">
     <div class="pointer"></div>
 
-    <!-- SVG RULET -->
     <svg id="wheel" viewBox="0 0 400 400">
-      <!-- dış daire -->
-      <circle cx="200" cy="200" r="195" fill="#111"/>
-      <!-- arka renkler -->
-      <g id="slices"></g>
+      <!-- dış çember -->
+      <circle cx="200" cy="200" r="190" stroke="#ff7aa2" stroke-width="4" fill="none"/>
+
       <!-- çizgiler -->
       <g id="lines" stroke="#ff7aa2" stroke-width="2"></g>
+
       <!-- yazılar -->
-      <g id="labels" fill="#fff" font-size="12" text-anchor="middle"></g>
+      <g id="labels" fill="#fff" font-size="13" text-anchor="middle"></g>
     </svg>
 
     <button class="center-btn" id="spinBtn">ÇEVİR</button>
@@ -87,105 +91,89 @@ svg{
 
 <script>
 const options = [
-  "Göz temasını bozma",
-  "Yaklaş ama dokunma",
-  "Elini beline koy",
-  "Kulağına fısılda",
-  "Omzuna temas",
-  "Yaklaş–geri çekil",
-  "Nefesini hissettir",
-  "Yavaş sarıl",
-  "Boynuna hafif temas",
+  "Göz teması",
+  "Yaklaş",
+  "Dokunma",
+  "Fısılda",
+  "Omza temas",
+  "Geri çekil",
+  "Nefesi hisset",
+  "Sarıl",
+  "Boyun",
   "Bakışı koru",
-  "Kısa cümle fısılda",
-  "Teması yavaşlat",
-  "Yakınlığı artır",
-  "Uyumu koru",
-  "Ritmi sen belirle",
-  "Sessiz kal"
+  "Yakın dur",
+  "Yavaşlat",
+  "Yakınlık",
+  "Uyum",
+  "Ritim",
+  "Sessizlik"
 ];
 
-const sliceCount = options.length;
+const count = options.length;
 const center = 200;
-const radius = 195;
-const sliceAngle = 360 / sliceCount;
+const radius = 190;
+const slice = 360 / count;
 
-const slicesG = document.getElementById("slices");
-const linesG  = document.getElementById("lines");
-const labelsG = document.getElementById("labels");
+const lines = document.getElementById("lines");
+const labels = document.getElementById("labels");
 
-// RENKLİ DİLİMLER
-for(let i=0;i<sliceCount;i++){
-  const start = i * sliceAngle;
-  const end = start + sliceAngle;
+// ÇİZGİLER + YAZILAR
+for(let i=0;i<count;i++){
+  const angle = i * slice * Math.PI / 180;
 
-  const largeArc = sliceAngle > 180 ? 1 : 0;
-
-  const x1 = center + radius * Math.cos(Math.PI * start / 180);
-  const y1 = center + radius * Math.sin(Math.PI * start / 180);
-  const x2 = center + radius * Math.cos(Math.PI * end / 180);
-  const y2 = center + radius * Math.sin(Math.PI * end / 180);
-
-  const path = document.createElementNS("http://www.w3.org/2000/svg","path");
-  path.setAttribute("d",
-    `M ${center} ${center}
-     L ${x1} ${y1}
-     A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}
-     Z`);
-  path.setAttribute("fill", i%2 ? "#ff3b7a" : "#ff7aa2");
-  slicesG.appendChild(path);
-
-  // DÜMDÜZ RADYAL ÇİZGİ
+  // çizgi
+  const x = center + radius * Math.cos(angle);
+  const y = center + radius * Math.sin(angle);
   const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-  line.setAttribute("x1", center);
-  line.setAttribute("y1", center);
-  line.setAttribute("x2", x1);
-  line.setAttribute("y2", y1);
-  linesG.appendChild(line);
+  line.setAttribute("x1",center);
+  line.setAttribute("y1",center);
+  line.setAttribute("x2",x);
+  line.setAttribute("y2",y);
+  lines.appendChild(line);
 
-  // YAZI
-  const mid = start + sliceAngle/2;
-  const tx = center + (radius*0.65) * Math.cos(Math.PI * mid / 180);
-  const ty = center + (radius*0.65) * Math.sin(Math.PI * mid / 180);
+  // yazı (iki çizgi arası)
+  const mid = angle + (slice/2) * Math.PI / 180;
+  const tx = center + radius*0.65 * Math.cos(mid);
+  const ty = center + radius*0.65 * Math.sin(mid);
 
   const text = document.createElementNS("http://www.w3.org/2000/svg","text");
-  text.setAttribute("x", tx);
-  text.setAttribute("y", ty);
-  text.setAttribute("transform", `rotate(${mid}, ${tx}, ${ty})`);
+  text.setAttribute("x",tx);
+  text.setAttribute("y",ty);
+  text.setAttribute("transform",`rotate(${mid*180/Math.PI},${tx},${ty})`);
   text.textContent = options[i];
-  labelsG.appendChild(text);
+  labels.appendChild(text);
 }
 
-// ===== SES =====
-let audioCtx, tickTimer;
+// SES
+let audioCtx, timer;
 function tick(){
   const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-  o.type="square"; o.frequency.value=1000; g.gain.value=0.05;
+  o.frequency.value=900; g.gain.value=0.05;
   o.connect(g).connect(audioCtx.destination);
   o.start(); o.stop(audioCtx.currentTime+0.02);
 }
 function clack(){
   const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-  o.frequency.value=220; g.gain.value=0.12;
+  o.frequency.value=200; g.gain.value=0.12;
   o.connect(g).connect(audioCtx.destination);
   o.start(); o.stop(audioCtx.currentTime+0.06);
 }
 function startSound(){
   audioCtx=new (window.AudioContext||webkitAudioContext)();
   let t=70;
-  tickTimer=setInterval(function run(){
+  timer=setInterval(function run(){
     tick(); t+=14;
-    clearInterval(tickTimer);
-    tickTimer=setInterval(run,t);
+    clearInterval(timer);
+    timer=setInterval(run,t);
   },t);
 }
 function stopSound(){
-  clearInterval(tickTimer);
+  clearInterval(timer);
   clack();
-  setTimeout(()=>audioCtx.close(),150);
+  setTimeout(()=>audioCtx.close(),120);
 }
 
-// ===== DÖNÜŞ =====
+// DÖN
 let angle=0, spinning=false;
 const wheel=document.getElementById("wheel");
 
@@ -194,8 +182,8 @@ document.getElementById("spinBtn").onclick=()=>{
   spinning=true;
   startSound();
 
-  const idx=Math.floor(Math.random()*sliceCount);
-  const stop=360*3 + idx*sliceAngle + sliceAngle/2;
+  const idx=Math.floor(Math.random()*count);
+  const stop=360*3 + idx*slice + slice/2;
   angle+=stop;
   wheel.style.transform=`rotate(${angle}deg)`;
 
@@ -206,5 +194,6 @@ document.getElementById("spinBtn").onclick=()=>{
   },2600);
 };
 </script>
+
 </body>
 </html>
