@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ateşli Rulet – Gece Modu 2</title>
+<style>
+:root{
+  --bg1:#050008; --bg2:#000;
+  --neon:#ff3b7a; --neon2:#ff7aa2;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at top, var(--bg1), var(--bg2));
+  font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:#fff; text-align:center;
+}
+.container{width:100%; max-width:440px; padding:12px}
+.title{letter-spacing:.4px; opacity:.9; margin-bottom:6px}
+.wheel-wrap{position:relative; width:320px; height:320px; margin:10px auto 14px}
+.pointer{
+  position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+  width:0;height:0;
+  border-left:14px solid transparent;
+  border-right:14px solid transparent;
+  border-bottom:22px solid var(--neon);
+  filter:drop-shadow(0 0 10px rgba(255,59,122,.8));
+  z-index:5;
+}
+.wheel{
+  width:100%; height:100%; border-radius:50%;
+  background:conic-gradient(
+    #ff3b7a 0 22.5deg, #ff7aa2 22.5 45deg,
+    #ff3b7a 45 67.5deg, #ff7aa2 67.5 90deg,
+    #ff3b7a 90 112.5deg, #ff7aa2 112.5 135deg,
+    #ff3b7a 135 157.5deg, #ff7aa2 157.5 180deg,
+    #ff3b7a 180 202.5deg, #ff7aa2 202.5 225deg,
+    #ff3b7a 225 247.5deg, #ff7aa2 247.5 270deg,
+    #ff3b7a 270 292.5deg, #ff7aa2 292.5 315deg,
+    #ff3b7a 315 337.5deg, #ff7aa2 337.5 360deg
+  );
+  box-shadow:0 0 55px rgba(255,59,122,.55), inset 0 0 18px rgba(0,0,0,.6);
+  transition:transform 1.6s cubic-bezier(.18,.8,.18,1);
+}
+.center-btn{
+  position:absolute; inset:0; margin:auto;
+  width:96px; height:96px; border-radius:50%;
+  border:none; cursor:pointer;
+  background:#070007; color:var(--neon2);
+  font-weight:800; font-size:18px; letter-spacing:.5px;
+  box-shadow:0 0 28px rgba(255,59,122,.9), inset 0 0 10px rgba(255,255,255,.05);
+  z-index:4;
+}
+.center-btn:active{transform:scale(.96)}
+.readout{
+  min-height:72px; padding:10px 12px; margin-top:6px;
+  border-radius:12px; background:rgba(255,255,255,.04);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+  font-size:18px; line-height:1.3;
+}
+.meta{display:flex; justify-content:space-between; opacity:.7; font-size:13px; margin-top:6px}
+.hard{color:var(--neon2)}
+.lock{opacity:.45}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">🌑 Ateşli Rulet — Gece Modu 2</div>
+
+  <div class="wheel-wrap">
+    <div class="pointer"></div>
+    <div id="wheel" class="wheel"></div>
+    <button id="spinBtn" class="center-btn" onclick="spin()">ÇEVİR</button>
+  </div>
+
+  <div id="task" class="readout">Hazırsan çevir…</div>
+  <div class="meta">
+    <div>Tur: <b id="round">0</b></div>
+    <div>Zorluk: <b class="hard" id="level">Başlangıç</b></div>
+  </div>
+</div>
+
+<script>
+// 16 DİLİM — grafik/explicit olmayan, tensel & ateşli
+const tasks = [
+  // 1–4 (Başlangıç)
+  "Göz temasını bozma (20 sn)",
+  "Yavaşça yaklaş, aradaki mesafeyi koru (15 sn)",
+  "Elini beline koy ve sabit dur (15 sn)",
+  "Kulağına tek kelime fısılda",
+
+  // 5–8 (Isınma)
+  "Omzuna hafif bir dokunuş yap (10 sn)",
+  "Yaklaşıp geri çekil, ritmi sen belirle",
+  "Nefesini yakından hissettir (10 sn)",
+  "Yavaş bir sarılma ver (20 sn)",
+
+  // 9–12 (Ateşli)
+  "Boynuna çok hafif bir temas yap (10 sn)",
+  "Ellerin belinde kalsın, bakışını koru (20 sn)",
+  "Yakın dur, fısıltıyla kısa bir cümle söyle",
+  "Teması yavaşlat, sabrı test et (20 sn)",
+
+  // 13–16 (Yoğun)
+  "Yakınlığı artır, teması sabit tut (25 sn)",
+  "Bakış + temas uyumunu bozma (30 sn)",
+  "Yaklaşıp geri çekil, kontrol sende (30 sn)",
+  "Sessiz kal, teması konuşsun (30 sn)"
+];
+
+let angle = 0;
+let round = 0;
+let locked = false;
+
+function difficultyLabel(r){
+  if(r<=3) return "Başlangıç";
+  if(r<=6) return "Isınma";
+  if(r<=10) return "Ateşli";
+  return "Yoğun";
+}
+
+function spin(){
+  if(locked) return;
+  locked = true;
+
+  const wheel = document.getElementById("wheel");
+  const btn = document.getElementById("spinBtn");
+  const taskBox = document.getElementById("task");
+
+  round++;
+  document.getElementById("round").innerText = round;
+  document.getElementById("level").innerText = difficultyLabel(round);
+
+  // ilerledikçe üst dilimlere kayma (zorlaşma)
+  const biasStart = Math.min(Math.floor(round/2), 12); // 0→12
+  const idx = Math.floor(Math.random() * (tasks.length - biasStart)) + biasStart;
+
+  const slice = 360 / tasks.length;
+  const spinAngle = 900 + (idx * slice) + slice/2;
+  angle += spinAngle;
+  wheel.style.transform = `rotate(${angle}deg)`;
+
+  btn.classList.add("lock");
+  setTimeout(()=>{
+    taskBox.innerText = tasks[idx];
+  }, 1200);
+
+  // kısa kilit (spam olmasın)
+  setTimeout(()=>{
+    locked = false;
+    btn.classList.remove("lock");
+  }, 1700);
+}
+</script>
+</body>
+</html>
